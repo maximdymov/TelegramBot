@@ -76,6 +76,18 @@ namespace TelegramBot
 
         private async static Task BotOnMessageReceived(ITelegramBotClient botClient, Message message)
         {
+            Func<bool> checkDouble = () =>
+            {
+                try
+                {
+                    double.Parse(message.Text, CultureInfo.InvariantCulture);
+                    return true;
+                }
+                catch
+                {
+                    return false;
+                }
+            };
 
             if (message.Text == "/start") await Start(botClient, message);
 
@@ -88,6 +100,8 @@ namespace TelegramBot
                     return;
 
                 case (int)OperationCode.Pricing:
+                    if (checkDouble() == false)
+                        await BotAnswer(botClient, message, text: "Повторите ввод цены или начните сначала", "В начало");
                     tempPrice = double.Parse(message.Text, CultureInfo.InvariantCulture);
                     await BotAnswer(botClient, message, text: "Введите название категории", "В начало");
                     operationCounter = (int)OperationCode.Categorizing;
@@ -96,7 +110,8 @@ namespace TelegramBot
                 case (int)OperationCode.Categorizing:
                     tempCategoryName = message.Text;
                     PurchaseStorage.AddPurchase(new Purchase(tempName, tempPrice, tempCategoryName));
-                    await BotAnswer(botClient, message, text: "Покупка добавлена", "В начало");
+                    await BotAnswer(botClient, message, text: "Покупка добавлена");
+                    await Start(botClient, message);
                     return;
             }
         }
@@ -135,7 +150,7 @@ namespace TelegramBot
 
             if (callbackQuery.Data == "Показать все покупки")
             {
-                await BotAnswer(botClient, message, InfoHelper.ShowAllPurchases(), "В начало");
+                await BotAnswer(botClient, message, InfoHelper.ShowAllPurchases(), "В начало", "Траты по категориям");
             }
 
             if (callbackQuery.Data == "В начало")
@@ -143,10 +158,10 @@ namespace TelegramBot
                 await Start(botClient, message);
             }
 
-            //if (callbackQuery.Data == "Траты по категориям")
-            //{
-            //    await BotAnswer(botClient, message, InfoHelper.ShowAllPurchases(), "В начало");
-            //}
+            if (callbackQuery.Data == "Траты по категориям")
+            {
+                await BotAnswer(botClient, message, InfoHelper.ShowSpendsByCategories(), "В начало");
+            }
         }
 
         private static async Task Start(ITelegramBotClient botClient, Message message)

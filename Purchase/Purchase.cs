@@ -22,13 +22,13 @@ namespace TelegramBot
             }
         }
 
-        public Category Category { get; }
+        public string Category { get; }
 
         public Purchase(string name, double price, string categoryName)
         {
             Name = name;
             Price = price;
-            Category = new Category(categoryName);
+            Category = categoryName;
             CategoryStorage.AddCategory(Category);
         }
     }
