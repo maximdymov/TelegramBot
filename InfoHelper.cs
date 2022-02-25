@@ -13,7 +13,7 @@ namespace TelegramBot
             var purchases = PurchaseStorage.GetAllPurchases();
             var purchaseList = new StringBuilder();
 
-            if (purchases.Count == 0) return "Нет покупок";
+            if (purchases.Count == 0) return "Нет покупок.";
 
             for (int i = 0; i < purchases.Count; i++)
             {
@@ -34,17 +34,16 @@ namespace TelegramBot
             var categories = CategoryStorage.GetAllCategories().ToList();
             var categoryList = new StringBuilder();
 
-            if (categories.Count == 0) return "Нет категорий";
+            if (categories.Count == 0) return "Нет категорий.";
 
             for (int i = 0; i < categories.Count; i++)
             {
-                categoryList.Append($"{i + 1}). ");
+                categoryList.Append($"/{i + 1}). ");
                 categoryList.Append(categories[i]);
                 categoryList.Append('\n');
             }
 
             return categoryList.ToString();
-
         }
 
         private static List<Purchase> GetPurchasesInCategory(string category)
@@ -57,6 +56,7 @@ namespace TelegramBot
                     list.Add(PurchaseStorage.GetAllPurchases()[i]);
                 }
             }
+
             return list;
         }
 
@@ -69,25 +69,9 @@ namespace TelegramBot
             {
                 result += item.Price;
             }
+
             return result;
         }
-
-        //public static string ShowPurchasesInCategory(Category category)
-        //{
-        //    var list = GetPurchasesByCategory(category);
-        //    var result = new StringBuilder();
-
-        //    if (list.Count == 0) return $"Нет покупок в категории {category.Name}";
-
-        //    for (int i = 0; i < list.Count; i++)
-        //    {
-        //        result.Append($"{i + 1}). ");
-        //        result.Append(list[i].Name);
-        //        result.Append('\n');
-        //    }
-
-        //    return result.ToString();
-        //}
 
         public static string ShowSpendsByCategories()
         {
@@ -97,7 +81,20 @@ namespace TelegramBot
                 var spend = GetCategorySpends(category);
                 result.Append($"{category} : {spend} руб.\n");
             }
+
+            if (CategoryStorage.GetAllCategories().Count == 0) return "Нет категорий.";
+
             return result.ToString();
+        }
+
+        public static string ChoiceExistingCategory(string message)
+        {
+            var index = int.Parse(message.TrimStart('/'));
+            var categories = CategoryStorage.GetAllCategories().ToList();
+
+            if (categories.Count == 0) return "";
+
+            return categories[index - 1];
         }
 
     }

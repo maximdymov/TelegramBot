@@ -35,19 +35,6 @@ namespace TelegramBot
             {
                 UpdateType.CallbackQuery => BotOnCallbackQueryReceived(botClient, update.CallbackQuery),
                 UpdateType.Message => BotOnMessageReceived(botClient, update.Message),
-                //UpdateType.Unknown => throw new NotImplementedException(),
-                //UpdateType.InlineQuery => throw new NotImplementedException(),
-                //UpdateType.ChosenInlineResult => throw new NotImplementedException(),
-                //UpdateType.EditedMessage => throw new NotImplementedException(),
-                //UpdateType.ChannelPost => throw new NotImplementedException(),
-                //UpdateType.EditedChannelPost => throw new NotImplementedException(),
-                //UpdateType.ShippingQuery => throw new NotImplementedException(),
-                //UpdateType.PreCheckoutQuery => throw new NotImplementedException(),
-                //UpdateType.Poll => throw new NotImplementedException(),
-                //UpdateType.PollAnswer => throw new NotImplementedException(),
-                //UpdateType.MyChatMember => throw new NotImplementedException(),
-                //UpdateType.ChatMember => throw new NotImplementedException(),
-                //UpdateType.ChatJoinRequest => throw new NotImplementedException(),
             };
 
             try
@@ -76,11 +63,12 @@ namespace TelegramBot
 
         private async static Task BotOnMessageReceived(ITelegramBotClient botClient, Message message)
         {
-            Func<bool> checkDouble = () =>
+            Func<bool> checkNumber = () =>
             {
                 try
                 {
-                    double.Parse(message.Text, CultureInfo.InvariantCulture);
+                    var msg = message.Text.TrimStart('/');
+                    double.Parse(msg, CultureInfo.InvariantCulture);
                     return true;
                 }
                 catch
@@ -100,15 +88,17 @@ namespace TelegramBot
                     return;
 
                 case (int)OperationCode.Pricing:
-                    if (checkDouble() == false)
+                    if (checkNumber() == false)
                         await BotAnswer(botClient, message, text: "Повторите ввод цены или начните сначала", "В начало");
                     tempPrice = double.Parse(message.Text, CultureInfo.InvariantCulture);
-                    await BotAnswer(botClient, message, text: "Введите название категории", "В начало");
+                    await BotAnswer(botClient, message, text: $"Введите название категории или выберите одну из существующих:\n{InfoHelper.ShowAllCategories()}", "В начало");
                     operationCounter = (int)OperationCode.Categorizing;
                     return;
 
                 case (int)OperationCode.Categorizing:
-                    tempCategoryName = message.Text;
+                    if (checkNumber() == true)
+                        tempCategoryName = InfoHelper.ChoiceExistingCategory(message.Text);
+                    else tempCategoryName = message.Text;
                     PurchaseStorage.AddPurchase(new Purchase(tempName, tempPrice, tempCategoryName));
                     await BotAnswer(botClient, message, text: "Покупка добавлена");
                     await Start(botClient, message);
@@ -144,13 +134,13 @@ namespace TelegramBot
 
             if (callbackQuery.Data == "Добавить покупку")
             {
-                await BotAnswer(botClient, message, "Введите название покупки");
+                await BotAnswer(botClient, message, text: "Введите название покупки");
                 operationCounter = (int)OperationCode.Naming;
             }
 
             if (callbackQuery.Data == "Показать все покупки")
             {
-                await BotAnswer(botClient, message, InfoHelper.ShowAllPurchases(), "В начало", "Траты по категориям");
+                await BotAnswer(botClient, message, text: InfoHelper.ShowAllPurchases(), "В начало", "Траты по категориям");
             }
 
             if (callbackQuery.Data == "В начало")
@@ -160,7 +150,7 @@ namespace TelegramBot
 
             if (callbackQuery.Data == "Траты по категориям")
             {
-                await BotAnswer(botClient, message, InfoHelper.ShowSpendsByCategories(), "В начало");
+                await BotAnswer(botClient, message, text: InfoHelper.ShowSpendsByCategories(), "В начало");
             }
         }
 
@@ -173,5 +163,7 @@ namespace TelegramBot
             
             await BotAnswer(botClient, message, text: "Выберите одно из действий", "Добавить покупку", "Показать все покупки");
         }
+
+
     }
 }
